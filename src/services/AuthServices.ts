@@ -7,25 +7,36 @@ export class AuthService {
   private baseUrl = process.env.NEXT_PUBLIC_API_URL!;
 
   async login(email: string, password: string) {
-    const res = await axiosInstance.post(`/login`, { email, password });
+    const res = await axiosInstance.post('/login', { email, password });
     const json = res.data;
 
-    if (!json.meta?.status) {
-      throw new Error(json.meta?.message || "Login gagal");
+    if (!json.token) {
+      throw new Error(json.message || 'Login gagal');
     }
 
-    Cookies.set("access_token", json.data.access_token, {
+    Cookies.set('access_token', json.token, {
       expires: 1,
       sameSite: 'lax',
     });
 
-    Cookies.set("user", JSON.stringify({
-      full_name: json.data.user.full_name,
-      role: json.data.role,
-      company_id: json.data.user.company_id,
-    }), { expires: 1 });
+    Cookies.set('user', JSON.stringify(json.user), {
+      expires: 1,
+    });
 
-    return json.data.user;
+    return json.user;
+  }
+
+    async logout() {
+    try {
+      await axiosInstance.post('/logout');
+    } catch (error) {
+      console.error('Logout API failed:', error);
+    } finally {
+      Cookies.remove('access_token');
+      Cookies.remove('user');
+
+      window.location.href = './';
+    }
   }
 }
 
